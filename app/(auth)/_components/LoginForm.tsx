@@ -1,20 +1,41 @@
 "use client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema } from "../register/schema";
+import { loginSchema } from "../schema";
 import { Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useState, useTransition } from "react";
+import {z} from 'zod'
+import { handleLogin } from "@/lib/actions/auth-action";
+
+type LoginFormData=z.infer<typeof loginSchema>
 
 export default function LoginForm() {
   const router = useRouter();
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const [error, setError]= useState("");
+  const[isPending,setTransition]=useTransition();
+
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = (data: any) => {
-    console.log(data);
-    router.push("/auth/dashboard");
+  const onSubmit =async (data: LoginFormData) => {
+    setError("");
+    try {
+      const res = await handleLogin(data);
+      if (!res.success) {
+        throw new Error(res.message || "Login Failed");
+      }
+
+      //   await checkAuth();
+      // handle transition
+      setTransition(() => {
+        router.push("/auth/dashboard");
+      });
+    } catch (err: any) {
+      setError(err.message || "Login Failed");
+    }
   };
 
   return (
@@ -24,9 +45,9 @@ export default function LoginForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label className="block text-sm text-black font-semibold mb-1">Enter your Phone Number</label>
-          <input {...register("phone")} placeholder="9********9"  
+          <input {...register("phoneNumber")} placeholder="9********9"  
           className=" w-full p-3 border border-red-200 rounded-xl text-black focus:ring-2 focus:ring-red-500 outline-none" />
-          {errors.phone && <p className="text-black-500 text-xs mt-1">{errors.phone.message as string}</p>}
+          {errors.phoneNumber && <p className="text-black-500 text-xs mt-1">{errors.phoneNumber.message as string}</p>}
         </div>
         <div className="relative">
           <label className="block text-sm text-black font-semibold mb-1">Password</label>
