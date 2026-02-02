@@ -8,15 +8,21 @@ export const handleRegister = async (formData: any) => {
   console.log(formData);
   try {
     // handle data from component file
-    const result:any = await registerUser(formData);
+    const result: any = await registerUser(formData);
     // handle how to send data back to component
+    if(result.success) {
+      return {
+        success: true,
+        message: "Registration Successful",
+        data: result.data
+      };
+    }
     return {
-      success: true,
-      message: "Registration Successful",
-      data:result.data,
-    };
+      success: false,
+      message: result.message || "Registration Failed"
+    }
   } catch (err: Error | any) {
-    console.log(err, "hahahah");
+    console.log("Register Error:", err.response?.data);
 
     return {
       success: false,
@@ -32,11 +38,12 @@ export const handleLogin = async (formData: any) => {
     // handle how to send data back to component
     if (result.success) {
       await setAuthToken(result.token);
-      await setUserData(result.user);
+      const userData = result.user || result.data;
+      await setUserData(userData);
       return {
         success: true,
         message: "Login Successful",
-        data: result.user,
+        data: result.data,
       };
     }
     return {
