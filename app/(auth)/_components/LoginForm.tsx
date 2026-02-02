@@ -1,15 +1,13 @@
 "use client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema } from "../schema";
+import { loginSchema, type LoginFormData } from "../schema";
 import { Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import {z} from 'zod'
 import { handleLogin } from "@/lib/actions/auth-action";
-
-type LoginFormData=z.infer<typeof loginSchema>
 
 export default function LoginForm() {
   const router = useRouter();
