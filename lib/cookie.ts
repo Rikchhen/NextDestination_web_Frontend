@@ -3,7 +3,15 @@ import { cookies } from "next/headers"
 
 export const setAuthToken = async (token: string) => {
     const cookieStore = await cookies();
-    cookieStore.set({ name: "auth_token", value: token })
+    // cookieStore.set({ name: "auth_token", value: token })
+      cookieStore.set({
+    name: "auth_token",
+    value: token,
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: process.env.NODE_ENV === "production",
+  });
 }
 export const getAuthToken = async () => {
     const cookieStore = await cookies();
