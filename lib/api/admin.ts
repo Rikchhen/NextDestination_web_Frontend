@@ -8,6 +8,12 @@ export const getAllUsers = async () => {
 };
 
 export const deleteUser = async (userId: string) => {
-  const response = await axios.delete(API.ADMIN.USER_BY_ID(userId));
+  const response = await axios.delete(API.ADMIN.DELETE_ONE_USER(userId));
+  return response.data;
+};
+
+export const editUser = async (userId: string, updateData: any) => {
+  // Pass updateData as the second argument for the PATCH body
+  const response = await axios.patch(API.ADMIN.EDIT_USER(userId), updateData);
   return response.data;
 };

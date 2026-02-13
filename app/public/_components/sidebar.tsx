@@ -1,5 +1,7 @@
 import React from 'react';
 import { Home, Phone, BookOpen, Info, LogOut } from "lucide-react";
+import Link from 'next/link';
+
 
 export default function Sidebar() {
   const menuItems = [
@@ -12,10 +14,13 @@ export default function Sidebar() {
 
   return (
     <div className="w-64 h-screen bg-[#FDE2E2] p-4 flex flex-col border-r border-red-100">
+      <Link href="/profile">
       <div className="bg-[#D32F2F] text-white p-4 rounded-lg mb-6">
         <p className="font-bold">Hello Hari Bahadur!</p>
         <p className="text-xs opacity-80">Where you want go</p>
       </div>
+      </Link>
+      
       <nav className="flex-1 space-y-2">
         {menuItems.map((item) => (
           <div key={item.name} className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${item.active ? 'bg-white shadow-sm text-[#D32F2F]' : 'hover:bg-white/50 text-gray-700'}`}>
