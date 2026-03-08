@@ -15,6 +15,7 @@ export default function RegisterForm() {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     mode: "onSubmit",
+    defaultValues: { role: "user" },
   });
 
   const router = useRouter();
@@ -37,10 +38,9 @@ export default function RegisterForm() {
       setTransition(() => {
         router.push("/login");
       });
-    } catch (err: Error | any) {
+    } catch (err: unknown) {
       console.log("error occured", err);
-
-      setError(err.message || "Registration failed");
+      setError(err instanceof Error ? err.message : "Registration failed");
     }
   };
 
@@ -97,7 +97,7 @@ export default function RegisterForm() {
           />
         </div>
 
-         <div>
+        <div>
           <label className="block text-sm font-semibold text-[#1a2b4b] mb-1">
             Confirm Password
           </label>
@@ -108,6 +108,7 @@ export default function RegisterForm() {
             className="w-full p-3 border border-red-300  text-black rounded-xl focus:ring-2 focus:ring-red-500 outline-none"
           />
         </div>
+        <input type="hidden" {...register("role")} value="user" />
 
         <p className="text-[10px] text-center text-gray-500">
           By continuing, you agree to our{" "}
