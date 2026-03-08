@@ -1,5 +1,8 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { Ticket, BadgeCheck, CreditCard, TrendingUp } from "lucide-react";
+import { getBusinessWalletBalance } from "@/lib/api/wallet";
 
 function StatCard({
   title,
@@ -31,39 +34,53 @@ function StatCard({
 }
 
 export default function BusinessHomePage() {
+  const [walletBalance, setWalletBalance] = useState("NPR 0");
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const wallet = await getBusinessWalletBalance();
+        setWalletBalance(`${wallet.currency} ${wallet.balance}`);
+      } catch {
+        setWalletBalance("NPR 0");
+      }
+    };
+    void load();
+  }, []);
+
   return (
     <main className="ml-72 min-h-screen bg-pink-50/30 p-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-sm text-gray-600 mt-1">
-            Overview of your tickets, approvals, and revenue.
+            Overview of your tickets, approvals, and wallet.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           <StatCard
             title="Active Tickets"
-            value="28"
-            hint="Tickets currently available for booking."
+            value="--"
+            hint="Connect ticket APIs to show live count."
             icon={<Ticket size={18} />}
           />
           <StatCard
             title="Pending Approvals"
-            value="7"
-            hint="Bookings awaiting payment approval."
+            value="--"
+            hint="Connect booking APIs for approval counts."
             icon={<BadgeCheck size={18} />}
           />
           <StatCard
-            title="Today’s Revenue"
-            value="NPR 42,350"
-            hint="Approved payments captured today."
+            title="Wallet Balance"
+            value={walletBalance}
+            hint="Live balance from business wallet."
             icon={<CreditCard size={18} />}
           />
           <StatCard
             title="Trend"
-            value="+12%"
-            hint="Compared to yesterday’s sales."
+            value="--"
+            hint="Compute after analytics endpoints are ready."
             icon={<TrendingUp size={18} />}
           />
         </div>
@@ -71,49 +88,24 @@ export default function BusinessHomePage() {
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 bg-white rounded-3xl border border-black/5 shadow-sm p-5">
             <p className="text-sm font-semibold text-gray-900">
-              Recent Approvals
+              Wallet Activity
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              Latest bookings requiring action.
+              View detailed wallet transaction history in Transactions.
             </p>
 
-            <div className="mt-4 space-y-3">
-              {[
-                {
-                  ref: "ND-92BAD0",
-                  route: "KTM → PKR",
-                  amount: 13294,
-                  status: "pending",
-                },
-                {
-                  ref: "ND-1A23F0",
-                  route: "KTM → BIR",
-                  amount: 8900,
-                  status: "pending",
-                },
-                {
-                  ref: "ND-77CC10",
-                  route: "KTM → POK",
-                  amount: 1400,
-                  status: "pending",
-                },
-              ].map((x) => (
-                <div
-                  key={x.ref}
-                  className="rounded-2xl border border-black/5 bg-gray-50 p-4 flex items-center justify-between gap-4"
-                >
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">{x.route}</p>
-                    <p className="text-xs text-gray-600 mt-1">Ref: {x.ref}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-gray-900">
-                      NPR {x.amount}
-                    </p>
-                    <p className="text-xs text-amber-700 mt-1">Pending</p>
-                  </div>
-                </div>
-              ))}
+            <div className="mt-4 rounded-2xl border border-black/5 bg-gray-50 p-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-gray-900">
+                  Current Balance
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  Updated from `/api/wallet/business/balance`
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-gray-900">{walletBalance}</p>
+              </div>
             </div>
           </div>
 

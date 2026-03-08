@@ -33,8 +33,8 @@ export const ForgetPasswordForm = () => {
         } else {
           throw new Error(result.message || "Failed to send reset link");
         }
-      } catch (err: Error | any) {
-        toast.error(err.message || "Failed to send reset link");
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : "Failed to send reset link");
       }
     });
   };

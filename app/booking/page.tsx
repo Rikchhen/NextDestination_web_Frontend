@@ -24,12 +24,13 @@ import {
 } from "lucide-react";
 
 import Sidebar from "../public/_components/sidebar";
-import { saveBooking } from "@/lib/bookingstore/bookingstore";
+import { createBooking } from "@/lib/api/booking";
 
 type Passenger = {
   fullName: string;
   age?: number;
-  gender?: "male" | "female" | "other";
+  gender?: "male" | "female";
+  seatNumber?: string;
   nationality?: string;
   idType?: "Citizenship" | "Passport" | "Other";
   idNumber?: string;
@@ -119,16 +120,12 @@ export default function BookingPage() {
     };
   }, [sp, mode]);
 
-  const [status] = useState<"pending" | "confirmed" | "cancelled">("pending");
-  const [bookingRef] = useState(
-    `ND-${Math.random().toString(16).slice(2, 8).toUpperCase()}`,
-  );
-
   const [passengers, setPassengers] = useState<Passenger[]>([
     {
       fullName: "",
       age: undefined,
       gender: "male",
+      seatNumber: "",
       nationality: "Nepal",
       idType: "Citizenship",
     },
@@ -136,6 +133,8 @@ export default function BookingPage() {
 
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const serviceFee = 120;
   const passengersCount = passengers.length;
@@ -143,13 +142,18 @@ export default function BookingPage() {
   const totalAmount = subtotal + serviceFee;
 
   const canSubmit = useMemo(() => {
-    const hasValidPassengerNames = passengers.every(
-      (p) => p.fullName.trim().length >= 3,
+    const hasValidPassengers = passengers.every(
+      (p) =>
+        p.fullName.trim().length >= 2 &&
+        typeof p.age === "number" &&
+        p.age >= 0 &&
+        p.gender &&
+        p.seatNumber?.trim(),
     );
     const hasContact = contactEmail.trim() && contactPhone.trim().length >= 7;
     const hasTicket = Boolean(ticket.id) && ticket.title !== "N/A";
 
-    return hasTicket && hasValidPassengerNames && Boolean(hasContact);
+    return hasTicket && hasValidPassengers && Boolean(hasContact);
   }, [passengers, contactEmail, contactPhone, ticket.id, ticket.title]);
 
   const addPassenger = () => {
@@ -158,6 +162,7 @@ export default function BookingPage() {
       {
         fullName: "",
         gender: "male",
+        seatNumber: "",
         nationality: "Nepal",
         idType: "Citizenship",
       },
@@ -175,28 +180,28 @@ export default function BookingPage() {
   };
 
   const handleSubmit = async () => {
-    saveBooking({
-      bookingRef,
-      status,
-      mode,
-      title: ticket.title,
-      number: ticket.number,
-      type: ticket.type,
-      from: ticket.from,
-      to: ticket.to,
-      date: ticket.date,
-      departTime: ticket.departTime,
-      arriveTime: ticket.arriveTime,
-      duration: ticket.duration,
-      price: ticket.price,
-      totalAmount,
-      passengers: passengers.map((p) => ({ fullName: p.fullName })),
-      contactEmail,
-      contactPhone,
-      createdAt: new Date().toISOString(),
-    });
+    try {
+      setSubmitting(true);
+      setSubmitError("");
 
-    router.push(`/ticket/${bookingRef}`);
+      const result = await createBooking({
+        trip: ticket.id,
+        passengers: passengers.map((p) => ({
+          fullName: p.fullName.trim(),
+          age: Number(p.age),
+          gender: (p.gender || "male") as "male" | "female",
+          seatNumber: (p.seatNumber || "").trim(),
+        })),
+        contactEmail: contactEmail.trim(),
+        contactPhone: contactPhone.trim(),
+      });
+
+      router.push(`/ticket/${result.booking.bookingRef}`);
+    } catch (error: unknown) {
+      setSubmitError(error instanceof Error ? error.message : "Booking failed");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const TransportIcon = mode === "bus" ? Bus : Plane;
@@ -244,10 +249,10 @@ export default function BookingPage() {
                   <p className="text-[11px] uppercase tracking-[0.2em] text-white/80">
                     Booking Ref
                   </p>
-                  <p className="mt-1 text-xl font-extrabold">{bookingRef}</p>
+                  <p className="mt-1 text-xl font-extrabold">Auto-generated</p>
                   <p className="mt-2 flex items-center justify-end gap-1 text-xs text-white/90">
                     <ShieldCheck size={14} />
-                    Status: <span className="font-semibold">{status}</span>
+                    Status: <span className="font-semibold">pending</span>
                   </p>
                 </div>
               </div>
@@ -436,12 +441,11 @@ export default function BookingPage() {
                           options={[
                             { label: "Male", value: "male" },
                             { label: "Female", value: "female" },
-                            { label: "Other", value: "other" },
                           ]}
                         />
 
                         <Field
-                          label="Age (optional)"
+                          label="Age"
                           type="number"
                           placeholder="e.g. 24"
                           value={p.age?.toString() ?? ""}
@@ -449,6 +453,15 @@ export default function BookingPage() {
                             updatePassenger(idx, {
                               age: v ? Number(v) : undefined,
                             })
+                          }
+                        />
+
+                        <Field
+                          label="Seat Number"
+                          placeholder="e.g. A1"
+                          value={p.seatNumber ?? ""}
+                          onChange={(v) =>
+                            updatePassenger(idx, { seatNumber: v })
                           }
                         />
 
@@ -524,21 +537,24 @@ export default function BookingPage() {
                     disabled={!canSubmit}
                     onClick={handleSubmit}
                     className={`inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition ${
-                      canSubmit
+                      canSubmit && !submitting
                         ? "bg-[#E13434] text-white hover:scale-[1.02] hover:shadow-lg active:scale-[0.99]"
                         : "cursor-not-allowed bg-gray-200 text-gray-500"
                     }`}
                   >
                     <CreditCard size={18} />
-                    Create Booking
+                    {submitting ? "Creating..." : "Create Booking"}
                   </button>
                 </div>
 
                 {!canSubmit && (
                   <p className="mt-3 text-xs text-gray-500">
-                    Fill passenger names and contact email/phone to enable
-                    booking.
+                    Fill name, age, gender, seat number, and contact email/phone
+                    to enable booking.
                   </p>
+                )}
+                {submitError && (
+                  <p className="mt-3 text-xs text-red-600">{submitError}</p>
                 )}
               </section>
             </div>

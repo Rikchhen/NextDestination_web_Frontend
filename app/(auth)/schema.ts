@@ -11,10 +11,11 @@ export const registerSchema = z
     fullName: z.string().min(2, "Name is required"),
     phoneNumber: z.string().min(5, "Enter a phone number"),
     email: z.email(),
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z
       .string()
-      .min(6, "Password must be at least 6 characters"),
+      .min(8, "Password must be at least 8 characters"),
+    role: z.enum(["user", "admin"]).default("user"),
   })
   .refine((v) => v.password === v.confirmPassword, {
     path: ["confirmPassword"],

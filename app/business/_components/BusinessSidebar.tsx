@@ -2,17 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import {
   LayoutDashboard,
   Ticket,
   PlusCircle,
   BadgeCheck,
   CreditCard,
+  ScanLine,
   Settings,
   LogOut,
   ChevronRight,
   Building2,
 } from "lucide-react";
+import { handleLogout } from "@/lib/actions/auth-action";
 
 type MenuItem = {
   name: string;
@@ -22,6 +26,8 @@ type MenuItem = {
 
 export default function BusinessSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const menuItems: MenuItem[] = [
     { name: "Dashboard", href: "/business", icon: LayoutDashboard },
@@ -31,10 +37,10 @@ export default function BusinessSidebar() {
       href: "/business/tickets/create",
       icon: PlusCircle,
     },
+    { name: "Scan Ticket", href: "/business/tickets/scan", icon: ScanLine },
     { name: "Approvals", href: "/business/approvals", icon: BadgeCheck },
     { name: "Transactions", href: "/business/transactions", icon: CreditCard },
     { name: "Settings", href: "/business/settings", icon: Settings },
-    { name: "Logout", href: "/login", icon: LogOut },
   ];
 
   const isItemActive = (href: string) => {
@@ -111,6 +117,28 @@ export default function BusinessSidebar() {
               </li>
             );
           })}
+          <li>
+            <button
+              disabled={isPending}
+              onClick={() =>
+                startTransition(async () => {
+                  await handleLogout();
+                  router.push("/business/login");
+                })
+              }
+              className="group flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition hover:bg-white/10 disabled:opacity-60"
+            >
+              <span className="flex items-center gap-3">
+                <span className="grid place-items-center h-9 w-9 rounded-lg transition bg-white/10 group-hover:bg-white/15">
+                  <LogOut size={18} />
+                </span>
+                <span className="text-sm font-medium">
+                  {isPending ? "Logging out..." : "Logout"}
+                </span>
+              </span>
+              <ChevronRight size={16} className="opacity-0 group-hover:opacity-60 transition" />
+            </button>
+          </li>
         </ul>
       </nav>
 

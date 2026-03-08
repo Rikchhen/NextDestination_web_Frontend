@@ -1,26 +1,30 @@
 "use client";
 
-import axiosInstance from '@/lib/api/axios';
-import { API } from '@/lib/api/endpoints';
 import React, { useEffect, useState } from 'react';
+import { AdminUser, deleteUser, editUser, getAllUsers } from '@/lib/api/admin';
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error) return error.message;
+  return fallback;
+};
 
 export default function AdminPage() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
   // States for Editing
-  const [editingUser, setEditingUser] = useState<any | null>(null);
-  const [editFormData, setEditFormData] = useState({ fullName: '', role: '' });
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [editFormData, setEditFormData] = useState({ fullName: '', phoneNumber: '', email: '' });
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get(API.ADMIN.USERS) as any;
-      const fetchedUsers = response.data.data || response.data.users || [];
-      setUsers(fetchedUsers);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to load users");
+      const fetchedUsers = await getAllUsers();
+      setUsers(fetchedUsers || []);
+      setError("");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to load users"));
     } finally {
       setLoading(false);
     }
@@ -32,34 +36,39 @@ export default function AdminPage() {
   const handleDelete = async (userId: string) => {
     if (!confirm("Delete this user permanently?")) return;
     try {
-      // Updated to match your DELETE_ONE_USER endpoint
-      const response = await axiosInstance.delete(API.ADMIN.DELETE_ONE_USER(userId)) as any;
-      if (response.data.success) {
-        setUsers((prev) => prev.filter((u) => u._id !== userId));
-      }
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Delete failed");
+      const response = await deleteUser(userId);
+      if (!response.success) throw new Error(response.message || "Delete failed");
+      setUsers((prev) => prev.filter((u) => u._id !== userId));
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, "Delete failed"));
     }
   };
 
   // EDIT Logic - Open Modal
-  const openEditModal = (user: any) => {
+  const openEditModal = (user: AdminUser) => {
     setEditingUser(user);
-    setEditFormData({ fullName: user.fullName, role: user.role });
+    setEditFormData({
+      fullName: user.fullName || user.name || '',
+      phoneNumber: user.phoneNumber || '',
+      email: user.email || '',
+    });
   };
 
   // EDIT Logic - Submit Changes
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingUser) return;
+
     try {
-      const response = await axiosInstance.patch(API.ADMIN.EDIT_USER(editingUser._id), editFormData) as any;
-      if (response.data.success) {
-        alert("User updated successfully!");
-        setEditingUser(null);
-        fetchUsers(); // Refresh the list
-      }
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Update failed");
+      const payload = Object.fromEntries(
+        Object.entries(editFormData).filter(([, value]) => String(value).trim() !== ''),
+      );
+      await editUser(editingUser._id, payload);
+      alert("User updated successfully!");
+      setEditingUser(null);
+      fetchUsers();
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, "Update failed"));
     }
   };
 
@@ -88,7 +97,7 @@ export default function AdminPage() {
           <tbody className="text-gray-700">
             {users.map((user) => (
               <tr key={user._id} className="border-t hover:bg-gray-50 transition">
-                <td className="px-6 py-4">{user.fullName}</td>
+                <td className="px-6 py-4">{user.fullName || user.name || 'N/A'}</td>
                 <td className="px-6 py-4">{user.phoneNumber}</td>
                 <td className="px-6 py-4">{user.email}</td>
                 <td className="px-6 py-4 uppercase text-xs font-bold">
@@ -126,15 +135,22 @@ export default function AdminPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase">Role</label>
-                <select 
+                <label className="block text-xs font-bold text-gray-400 uppercase">Phone Number</label>
+                <input 
+                  type="text" 
                   className="w-full border-b-2 border-gray-100 focus:border-slate-800 outline-none py-2 transition-all"
-                  value={editFormData.role}
-                  onChange={(e) => setEditFormData({...editFormData, role: e.target.value})}
-                >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
+                  value={editFormData.phoneNumber}
+                  onChange={(e) => setEditFormData({...editFormData, phoneNumber: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase">Email</label>
+                <input 
+                  type="email" 
+                  className="w-full border-b-2 border-gray-100 focus:border-slate-800 outline-none py-2 transition-all"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                />
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button 

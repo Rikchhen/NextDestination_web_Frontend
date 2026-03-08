@@ -1,4 +1,3 @@
-// server side processing
 "use server";
 
 import {
@@ -7,44 +6,61 @@ import {
   requestPasswordReset,
   resetPassword,
 } from "../api/auth";
-import { setUserData, setAuthToken } from "../cookie";
+import { loginBusiness } from "../api/business";
+import { clearAuthCookies, setUserData, setAuthToken } from "../cookie";
 
-export const handleRegister = async (formData: any) => {
-  console.log(formData);
+type ActionResponse = {
+  success: boolean;
+  message: string;
+  data?: unknown;
+};
+
+type AuthApiResponse = {
+  success?: boolean;
+  message?: string;
+  token?: string;
+  user?: unknown;
+  data?: unknown;
+};
+
+const getErrorMessage = (err: unknown, fallback: string) => {
+  if (err instanceof Error) return err.message;
+  return fallback;
+};
+
+export const handleRegister = async (
+  formData: Record<string, unknown>,
+): Promise<ActionResponse> => {
   try {
-    // handle data from component file
-    const result: any = await registerUser(formData);
-    // handle how to send data back to component
+    const result = (await registerUser(formData)) as AuthApiResponse;
     if (result.success) {
       return {
         success: true,
         message: "Registration Successful",
-        data: result.data,
+        data: result.user || result.data,
       };
     }
     return {
       success: false,
       message: result.message || "Registration Failed",
     };
-  } catch (err: Error | any) {
-    console.log("Register Error:", err.response?.data);
-
+  } catch (err: unknown) {
     return {
       success: false,
-      message: err.message || "Registration Failed",
+      message: getErrorMessage(err, "Registration Failed"),
     };
   }
 };
 
-export const handleLogin = async (formData: any) => {
+export const handleLogin = async (
+  formData: Record<string, unknown>,
+): Promise<ActionResponse> => {
   try {
-    // handle data from component file
-    const result: any = await loginUser(formData);
-    // handle how to send data back to component
+    const result = (await loginUser(formData)) as AuthApiResponse;
     if (result.success) {
-      await setAuthToken(result.token);
+      if (result.token) await setAuthToken(result.token);
       const userData = result.user || result.data;
-      await setUserData(userData);
+      if (userData) await setUserData(userData);
       return {
         success: true,
         message: "Login Successful",
@@ -55,10 +71,10 @@ export const handleLogin = async (formData: any) => {
       success: false,
       message: result.message || "Login Failed",
     };
-  } catch (err: Error | any) {
+  } catch (err: unknown) {
     return {
       success: false,
-      message: err.message || "Login Failed",
+      message: getErrorMessage(err, "Login Failed"),
     };
   }
 };
@@ -76,10 +92,10 @@ export const handleRequestPasswordReset = async (email: string) => {
       success: false,
       message: response.message || "Request password reset failed",
     };
-  } catch (error: Error | any) {
+  } catch (error: unknown) {
     return {
       success: false,
-      message: error.message || "Request password reset action failed",
+      message: getErrorMessage(error, "Request password reset action failed"),
     };
   }
 };
@@ -88,24 +104,43 @@ export const handleResetPassword = async (
   token: string,
   newPassword: string,
 ) => {
-  console.log("✅ handleResetPassword server action called");
-
   try {
     const response = await resetPassword(token, newPassword);
-    console.log("✅ resetPassword API response:", response);
-
-    // GUARANTEE plain object
     return {
       success: Boolean(response?.success),
       message:
         response?.message ??
         (response?.success ? "Password reset" : "Reset failed"),
     };
-  } catch (err: any) {
-    console.error("❌ handleResetPassword error:", err?.message ?? err);
+  } catch (err: unknown) {
     return {
       success: false,
-      message: err?.message ?? "Reset password action failed",
+      message: getErrorMessage(err, "Reset password action failed"),
     };
   }
+};
+
+export const handleBusinessLogin = async (formData: {
+  email: string;
+  password: string;
+}) => {
+  try {
+    const result = await loginBusiness(formData);
+    await setAuthToken(result.token);
+    await setUserData(result.business);
+    return {
+      success: true,
+      message: result.message || "Business Login Successful",
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: getErrorMessage(err, "Business Login Failed"),
+    };
+  }
+};
+
+export const handleLogout = async () => {
+  await clearAuthCookies();
+  return { success: true };
 };
