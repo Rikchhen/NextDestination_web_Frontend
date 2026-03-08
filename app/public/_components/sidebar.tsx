@@ -1,34 +1,112 @@
-import React from 'react';
-import { Home, Phone, BookOpen, Info, LogOut } from "lucide-react";
-import Link from 'next/link';
+"use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Home,
+  Phone,
+  BookOpen,
+  Info,
+  LogOut,
+  ChevronRight,
+  Ticket,
+} from "lucide-react";
+
+type MenuItem = {
+  name: string;
+  href: string;
+  icon: React.ElementType;
+};
 
 export default function Sidebar() {
-  const menuItems = [
-    { name: "Home", icon: <Home size={20}/>, active: true },
-    { name: "Contact us", icon: <Phone size={20}/> },
-    { name: "Booking", icon: <BookOpen size={20}/> },
-    { name: "About Us", icon: <Info size={20}/> },
-    { name: "Logout", icon: <LogOut size={20}/> },
+  const pathname = usePathname();
+
+  const menuItems: MenuItem[] = [
+    { name: "Home", href: "/home", icon: Home },
+    { name: "My Tickets", href: "/tickets", icon: Ticket },
+    { name: "Contact us", href: "/contact", icon: Phone },
+    { name: "Booking", href: "/booking", icon: BookOpen },
+    { name: "About Us", href: "/about", icon: Info },
+    { name: "Logout", href: "/login", icon: LogOut },
   ];
 
   return (
-    <div className="w-64 h-screen bg-[#FDE2E2] p-4 flex flex-col border-r border-red-100">
-      <Link href="/profile">
-      <div className="bg-[#D32F2F] text-white p-4 rounded-lg mb-6">
-        <p className="font-bold">Hello Hari Bahadur!</p>
-        <p className="text-xs opacity-80">Where you want go</p>
-      </div>
-      </Link>
-      
-      <nav className="flex-1 space-y-2">
-        {menuItems.map((item) => (
-          <div key={item.name} className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${item.active ? 'bg-white shadow-sm text-[#D32F2F]' : 'hover:bg-white/50 text-gray-700'}`}>
-            {item.icon}
-            <span className="font-medium">{item.name}</span>
+    <aside className="fixed top-0 left-0 h-screen w-64 bg-[#E13434] text-white flex flex-col z-50">
+      {/* Header */}
+      <div className="p-5 border-b border-white/15">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-white text-[#E13434] flex items-center justify-center font-bold">
+            HB
           </div>
-        ))}
+
+          <div className="leading-tight">
+            <p className="text-sm font-semibold">Hari Bahadur</p>
+            <p className="text-[11px] text-white/80">Select your destination</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 p-4 overflow-y-auto">
+        <p className="px-2 pb-3 text-[11px] uppercase tracking-widest text-white/70">
+          Library
+        </p>
+
+        <ul className="space-y-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + "/");
+
+            return (
+              <li key={item.name}>
+                <Link
+                  href={item.href}
+                  className={[
+                    "group flex items-center justify-between rounded-xl px-3 py-2.5 transition",
+                    isActive ? "bg-white text-[#E13434]" : "hover:bg-white/10",
+                  ].join(" ")}
+                >
+                  <span className="flex items-center gap-3">
+                    <span
+                      className={[
+                        "grid place-items-center h-9 w-9 rounded-lg transition",
+                        isActive
+                          ? "bg-[#E13434]/10"
+                          : "bg-white/10 group-hover:bg-white/15",
+                      ].join(" ")}
+                    >
+                      <Icon size={18} />
+                    </span>
+
+                    <span className="text-sm font-medium">{item.name}</span>
+                  </span>
+
+                  <ChevronRight
+                    size={16}
+                    className={[
+                      "transition",
+                      isActive
+                        ? "opacity-100"
+                        : "opacity-0 group-hover:opacity-60",
+                    ].join(" ")}
+                  />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
-    </div>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-white/15">
+        <div className="rounded-xl bg-white/10 p-3">
+          <p className="text-xs font-semibold">NextDestination</p>
+          <p className="text-[11px] text-white/80">
+            Book flights & buses easily
+          </p>
+        </div>
+      </div>
+    </aside>
   );
 }
