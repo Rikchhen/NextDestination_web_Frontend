@@ -7,7 +7,7 @@ import { Eye, Building2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { handleLogin } from "@/lib/actions/auth-action";
+import { handleBusinessLogin } from "@/lib/actions/auth-action";
 
 export default function BusinessLoginForm() {
   const router = useRouter();
@@ -26,7 +26,7 @@ export default function BusinessLoginForm() {
     setError("");
 
     try {
-      const res = await handleLogin(data);
+      const res = await handleBusinessLogin(data);
 
       if (!res.success) {
         throw new Error(res.message || "Login Failed");
@@ -35,8 +35,8 @@ export default function BusinessLoginForm() {
       setTransition(() => {
         router.push("/business");
       });
-    } catch (err: any) {
-      setError(err.message || "Login Failed");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Login Failed");
     }
   };
 
