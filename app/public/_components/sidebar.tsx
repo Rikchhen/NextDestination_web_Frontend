@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useTransition } from "react";
 import {
   Home,
   Phone,
@@ -10,7 +11,9 @@ import {
   LogOut,
   ChevronRight,
   Ticket,
+  Wallet,
 } from "lucide-react";
+import { handleLogout } from "@/lib/actions/auth-action";
 
 type MenuItem = {
   name: string;
@@ -20,14 +23,16 @@ type MenuItem = {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const menuItems: MenuItem[] = [
     { name: "Home", href: "/home", icon: Home },
     { name: "My Tickets", href: "/tickets", icon: Ticket },
+    { name: "Wallet", href: "/wallet", icon: Wallet },
     { name: "Contact us", href: "/contact", icon: Phone },
     { name: "Booking", href: "/booking", icon: BookOpen },
     { name: "About Us", href: "/about", icon: Info },
-    { name: "Logout", href: "/login", icon: LogOut },
   ];
 
   return (
@@ -95,6 +100,31 @@ export default function Sidebar() {
               </li>
             );
           })}
+          <li>
+            <button
+              disabled={isPending}
+              onClick={() =>
+                startTransition(async () => {
+                  await handleLogout();
+                  router.push("/login");
+                })
+              }
+              className="group flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition hover:bg-white/10 disabled:opacity-60"
+            >
+              <span className="flex items-center gap-3">
+                <span className="grid place-items-center h-9 w-9 rounded-lg transition bg-white/10 group-hover:bg-white/15">
+                  <LogOut size={18} />
+                </span>
+                <span className="text-sm font-medium">
+                  {isPending ? "Logging out..." : "Logout"}
+                </span>
+              </span>
+              <ChevronRight
+                size={16}
+                className="opacity-0 group-hover:opacity-60 transition"
+              />
+            </button>
+          </li>
         </ul>
       </nav>
 
