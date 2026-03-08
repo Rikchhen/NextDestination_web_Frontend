@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
+  email: z.email(),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 export type LoginFormData = z.infer<typeof loginSchema>;
