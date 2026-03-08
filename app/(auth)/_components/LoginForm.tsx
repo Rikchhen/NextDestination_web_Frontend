@@ -32,8 +32,8 @@ export default function LoginForm() {
       setTransition(() => {
         router.push("/home");
       });
-    } catch (err: any) {
-      setError(err.message || "Login Failed");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Login Failed");
     }
   };
 
