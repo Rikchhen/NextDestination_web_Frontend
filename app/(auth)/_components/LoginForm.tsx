@@ -6,19 +6,22 @@ import { Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import {z} from 'zod'
 import { handleLogin } from "@/lib/actions/auth-action";
 
 export default function LoginForm() {
   const router = useRouter();
-  const [error, setError]= useState("");
-  const[isPending,setTransition]=useTransition();
+  const [error, setError] = useState("");
+  const [isPending, setTransition] = useTransition();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit =async (data: LoginFormData) => {
+  const onSubmit = async (data: LoginFormData) => {
     setError("");
     try {
       const res = await handleLogin(data);
@@ -26,10 +29,8 @@ export default function LoginForm() {
         throw new Error(res.message || "Login Failed");
       }
 
-      //   await checkAuth();
-      // handle transition
       setTransition(() => {
-        router.push("/auth/dashboard");
+        router.push("/home");
       });
     } catch (err: any) {
       setError(err.message || "Login Failed");
@@ -39,24 +40,69 @@ export default function LoginForm() {
   return (
     <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
       <h2 className="text-2xl font-bold text-center text-[#1a2b4b]">Login</h2>
-      <p className="text-[#d32f2f] text-center text-sm mb-6">Welcome back to the app</p>
+      <p className="text-[#d32f2f] text-center text-sm mb-6">
+        Welcome back to the app
+      </p>
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <label className="block text-sm text-black font-semibold mb-1">Enter your Phone Number</label>
-          <input {...register("phoneNumber")} placeholder="9********9"  
-          className=" w-full p-3 border border-red-200 rounded-xl text-black focus:ring-2 focus:ring-red-500 outline-none" />
-          {errors.phoneNumber && <p className="text-black-500 text-xs mt-1">{errors.phoneNumber.message as string}</p>}
+          <label className="block text-sm text-black font-semibold mb-1">
+            Enter your Email
+          </label>
+          <input
+            {...register("email")}
+            placeholder="abc@gmail.com"
+            className="w-full p-3 border border-red-200 rounded-xl text-black focus:ring-2 focus:ring-red-500 outline-none"
+          />
+          {errors.email && (
+            <p className="text-black-500 text-xs mt-1">
+              {errors.email.message as string}
+            </p>
+          )}
         </div>
+
         <div className="relative">
-          <label className="block text-sm text-black font-semibold mb-1">Password</label>
-          <input {...register("password")} type="password" placeholder="........" 
-          className="w-full p-3 border border-red-200 rounded-xl text-black focus:ring-2 focus:ring-red-500 outline-none" />
+          <label className="block text-sm text-black font-semibold mb-1">
+            Password
+          </label>
+          <input
+            {...register("password")}
+            type="password"
+            placeholder="........"
+            className="w-full p-3 border border-red-200 rounded-xl text-black focus:ring-2 focus:ring-red-500 outline-none"
+          />
           <Eye className="absolute right-4 top-10 text-gray-400" size={20} />
-          {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message as string}</p>}
+          {errors.password && (
+            <p className="text-red-500 text-xs mt-1">
+              {errors.password.message as string}
+            </p>
+          )}
         </div>
-        <button className="w-full bg-[#d32f2f] text-white py-3 rounded-full font-bold hover:bg-red-700 transition">Login</button>
+
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+        <button
+          type="submit"
+          disabled={isPending}
+          className="w-full bg-[#d32f2f] text-white py-3 rounded-full font-bold hover:bg-red-700 transition disabled:opacity-60"
+        >
+          {isPending ? "Logging in..." : "Login"}
+        </button>
       </form>
-      <Link href="/register" className="text-red-600 font-bold text-sm block mt-4 text-center">Create an account</Link>
+
+      <Link
+        href="/register"
+        className="text-red-600 font-bold text-sm block mt-4 text-center"
+      >
+        Create an account
+      </Link>
+
+      <Link
+        href="/business/login"
+        className="text-[#1a2b4b] font-bold text-sm block mt-2 text-center"
+      >
+        Login as Business
+      </Link>
     </div>
   );
 }
